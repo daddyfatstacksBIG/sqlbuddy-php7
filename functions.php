@@ -168,13 +168,12 @@ if (isset($conn) && $conn->isConnected()) {
 	}
 }
 
-// undo magic quotes, if necessary
-if (get_magic_quotes_gpc()) {
-	$_GET = stripslashesFromArray($_GET);
-	$_POST = stripslashesFromArray($_POST);
-	$_COOKIE = stripslashesFromArray($_COOKIE);
-	$_REQUEST = stripslashesFromArray($_REQUEST);
-}
+
+$_GET = stripslashesFromArray($_GET);
+$_POST = stripslashesFromArray($_POST);
+$_COOKIE = stripslashesFromArray($_COOKIE);
+$_REQUEST = stripslashesFromArray($_REQUEST);
+
 
 function stripslashesFromArray($value) {
     $value = is_array($value) ?
@@ -462,7 +461,7 @@ function splitQueryText($query) {
 	// i spent 3 days figuring out this line
 	preg_match_all("/(?>[^;']|(''|(?>'([^']|\\')*[^\\\]')))+;/ixU", $query, $matches, PREG_SET_ORDER);
 
-	$querySplit = "";
+	$querySplit = [];
 
 	foreach ($matches as $match) {
 		// get rid of the trailing semicolon
