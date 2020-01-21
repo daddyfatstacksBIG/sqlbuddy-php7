@@ -16,11 +16,13 @@ Reviewed : 2016 Carlos Martín Arnillas <https://interruptorgeek.com>
 
 error_reporting(E_ALL);
 
-if (function_exists('date_default_timezone_set'))
-	date_default_timezone_set('Greenwich');
+if (function_exists('date_default_timezone_set')) {
+    date_default_timezone_set('Greenwich');
+}
 
-if (!session_id())
-	session_start();
+if (!session_id()) {
+    session_start();
+}
 
 define("MAIN_DIR", dirname(__FILE__) . "/");
 define("INCLUDES_DIR", MAIN_DIR . "includes/");
@@ -37,7 +39,7 @@ define("PREVIEW_CHAR_SIZE", 75);
 $adapterList[] = "mysql";
 
 if (function_exists("sqlite_open") || (class_exists("PDO") && in_array("sqlite", PDO::getAvailableDrivers()))) {
-	$adapterList[] = "sqlite";
+    $adapterList[] = "sqlite";
 }
 
 $cookieLength = time() + (60*24*60*60);
@@ -91,44 +93,44 @@ $langList['zh_TW'] = "中文 (繁體)";
 $langList['ja_JP'] = "日本語";
 
 if (isset($_COOKIE['sb_lang']) && array_key_exists($_COOKIE['sb_lang'], $langList)) {
-	$lang = preg_replace("/[^a-z0-9_]/i", "", $_COOKIE['sb_lang']);
+    $lang = preg_replace("/[^a-z0-9_]/i", "", $_COOKIE['sb_lang']);
 } else {
-	$lang = "en_US";
+    $lang = "en_US";
 }
 
 if ($lang != "en_US") {
-	// extend the cookie length
-	setcookie("sb_lang", $lang, $cookieLength);
-} else if (isset($_COOKIE['sb_lang'])) {
-	// cookie not needed for en_US
-	setcookie("sb_lang", "", time() - 10000);
+    // extend the cookie length
+    setcookie("sb_lang", $lang, $cookieLength);
+} elseif (isset($_COOKIE['sb_lang'])) {
+    // cookie not needed for en_US
+    setcookie("sb_lang", "", time() - 10000);
 }
 
 $themeList["classic"] = "Classic";
 $themeList["bittersweet"] = "Bittersweet";
 
 if (isset($_COOKIE['sb_theme'])) {
-	$currentTheme = preg_replace("/[^a-z0-9_]/i", "", $_COOKIE['sb_theme']);
+    $currentTheme = preg_replace("/[^a-z0-9_]/i", "", $_COOKIE['sb_theme']);
 
-	if (array_key_exists($currentTheme, $themeList)) {
-		$theme = $currentTheme;
+    if (array_key_exists($currentTheme, $themeList)) {
+        $theme = $currentTheme;
 
-		// extend the cookie length
-		setcookie("sb_theme", $theme, $cookieLength);
-	} else {
-		$theme = "bittersweet";
-		setcookie("sb_theme", "", time() - 10000);
-	}
+        // extend the cookie length
+        setcookie("sb_theme", $theme, $cookieLength);
+    } else {
+        $theme = "bittersweet";
+        setcookie("sb_theme", "", time() - 10000);
+    }
 } else {
-	$theme = "bittersweet";
+    $theme = "bittersweet";
 }
 
 $gt = new GetTextReader($lang . ".pot");
 
 if (isset($_SESSION['SB_LOGIN_STRING'])) {
-	$user = (isset($_SESSION['SB_LOGIN_USER'])) ? $_SESSION['SB_LOGIN_USER'] : "";
-	$pass = (isset($_SESSION['SB_LOGIN_PASS'])) ? $_SESSION['SB_LOGIN_PASS'] : "";
-	$conn = new SQL($_SESSION['SB_LOGIN_STRING'], $user, $pass);
+    $user = (isset($_SESSION['SB_LOGIN_USER'])) ? $_SESSION['SB_LOGIN_USER'] : "";
+    $pass = (isset($_SESSION['SB_LOGIN_PASS'])) ? $_SESSION['SB_LOGIN_PASS'] : "";
+    $conn = new SQL($_SESSION['SB_LOGIN_STRING'], $user, $pass);
 }
 
 // unique identifer for this session, to validate ajax requests.
@@ -137,46 +139,47 @@ if (isset($_SESSION['SB_LOGIN_STRING'])) {
 $requestKey = substr(md5(session_id() . $_SERVER["DOCUMENT_ROOT"]), 0, 16);
 
 if (isset($conn) && $conn->isConnected()) {
-	if (isset($_GET['db']))
-		$db = $conn->escapeString($_GET['db']);
+    if (isset($_GET['db'])) {
+        $db = $conn->escapeString($_GET['db']);
+    }
 
-	if (isset($_GET['table']))
-		$table = $conn->escapeString($_GET['table']);
+    if (isset($_GET['table'])) {
+        $table = $conn->escapeString($_GET['table']);
+    }
 
-	if ($conn->hasCharsetSupport()) {
+    if ($conn->hasCharsetSupport()) {
+        $charsetSql = $conn->listCharset();
+        if ($conn->isResultSet($charsetSql)) {
+            while ($charsetRow = $conn->fetchAssoc($charsetSql)) {
+                $charsetList[] = $charsetRow['Charset'];
+            }
+        }
 
-		$charsetSql = $conn->listCharset();
-		if ($conn->isResultSet($charsetSql)) {
-			while ($charsetRow = $conn->fetchAssoc($charsetSql)) {
-				$charsetList[] = $charsetRow['Charset'];
-			}
-		}
+        $collationSql = $conn->listCollation();
+        if ($conn->isResultSet($collationSql)) {
+            while ($collationRow = $conn->fetchAssoc($collationSql)) {
+                $collationList[$collationRow['Collation']] = $collationRow['Charset'];
+            }
+        }
 
-		$collationSql = $conn->listCollation();
-		if ($conn->isResultSet($collationSql)) {
-			while ($collationRow = $conn->fetchAssoc($collationSql)) {
-				$collationList[$collationRow['Collation']] = $collationRow['Charset'];
-			}
-		}
-
-		$enginesSql = $conn->listEngines();
-		if ($conn->isResultSet($enginesSql)) {
-			while ($engineRow = $conn->fetchAssoc($enginesSql)) {
-				$enginesList[$engineRow['Engine']] = $engineRow['Support'];
-			}
-		}
-	}
+        $enginesSql = $conn->listEngines();
+        if ($conn->isResultSet($enginesSql)) {
+            while ($engineRow = $conn->fetchAssoc($enginesSql)) {
+                $enginesList[$engineRow['Engine']] = $engineRow['Support'];
+            }
+        }
+    }
 }
 
-// undo magic quotes, if necessary
-if (get_magic_quotes_gpc()) {
-	$_GET = stripslashesFromArray($_GET);
-	$_POST = stripslashesFromArray($_POST);
-	$_COOKIE = stripslashesFromArray($_COOKIE);
-	$_REQUEST = stripslashesFromArray($_REQUEST);
-}
 
-function stripslashesFromArray($value) {
+$_GET = stripslashesFromArray($_GET);
+$_POST = stripslashesFromArray($_POST);
+$_COOKIE = stripslashesFromArray($_COOKIE);
+$_REQUEST = stripslashesFromArray($_REQUEST);
+
+
+function stripslashesFromArray($value)
+{
     $value = is_array($value) ?
                 array_map('stripslashesFromArray', $value) :
                 stripslashes($value);
@@ -184,80 +187,83 @@ function stripslashesFromArray($value) {
     return $value;
 }
 
-function loginCheck($validateReq = true) {
-	if (!isset($_SESSION['SB_LOGIN'])){
-		if (isset($_GET['ajaxRequest']))
-			redirect("login.php?timeout=1");
-		else
-			redirect("login.php");
-		exit;
-	}
-	if ($validateReq) {
-		if (!validateRequest()) {
-			exit;
-		}
-	}
+function loginCheck($validateReq = true)
+{
+    if (!isset($_SESSION['SB_LOGIN'])) {
+        if (isset($_GET['ajaxRequest'])) {
+            redirect("login.php?timeout=1");
+        } else {
+            redirect("login.php");
+        }
+        exit;
+    }
+    if ($validateReq) {
+        if (!validateRequest()) {
+            exit;
+        }
+    }
 
-	startOutput();
+    startOutput();
 }
 
-function redirect($url) {
-	if (isset($_GET['ajaxRequest']) || headers_sent()) {
-		global $requestKey;
-		?>
+function redirect($url)
+{
+    if (isset($_GET['ajaxRequest']) || headers_sent()) {
+        global $requestKey; ?>
 		<script type="text/javascript" authkey="<?php echo $_GET['requestKey']; ?>">
 
 		document.location = "<?php echo $url; ?>" + window.location.hash;
 
 		</script>
 		<?php
-	} else {
-		header("Location: $url");
-	}
-	exit;
+    } else {
+        header("Location: $url");
+    }
+    exit;
 }
 
-function validateRequest() {
-	global $requestKey;
-	if (isset($_GET['requestKey']) && $_GET['requestKey'] != $requestKey) {
-		return false;
-	}
-	return true;
+function validateRequest()
+{
+    global $requestKey;
+    if (isset($_GET['requestKey']) && $_GET['requestKey'] != $requestKey) {
+        return false;
+    }
+    return true;
 }
 
-function startOutput() {
-	global $sbconfig;
+function startOutput()
+{
+    global $sbconfig;
 
-	if (!headers_sent()) {
-		if (extension_loaded("zlib") && ((isset($sbconfig['EnableGzip']) && $sbconfig['EnableGzip'] == true) || !isset($sbconfig['EnableGzip'])) && !ini_get("zlib.output_compression") && ini_get("output_handler") != "ob_gzhandler") {
-			ob_start("ob_gzhandler");
-		} else {
-			ob_start();
-		}
+    if (!headers_sent()) {
+        if (extension_loaded("zlib") && ((isset($sbconfig['EnableGzip']) && $sbconfig['EnableGzip'] == true) || !isset($sbconfig['EnableGzip'])) && !ini_get("zlib.output_compression") && ini_get("output_handler") != "ob_gzhandler") {
+            ob_start("ob_gzhandler");
+        } else {
+            ob_start();
+        }
 
-		register_shutdown_function("finishOutput");
-	}
+        register_shutdown_function("finishOutput");
+    }
 }
 
-function finishOutput() {
-	global $conn;
+function finishOutput()
+{
+    global $conn;
 
-	ob_end_flush();
+    ob_end_flush();
 
-	if (isset($conn) && $conn->isConnected()) {
-		$conn->disconnect();
-		unset($conn);
-	}
+    if (isset($conn) && $conn->isConnected()) {
+        $conn->disconnect();
+        unset($conn);
+    }
 }
 
-function outputPage() {
-
-global $requestKey;
-global $sbconfig;
-global $conn;
-global $lang;
-
-?><!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+function outputPage()
+{
+    global $requestKey;
+    global $sbconfig;
+    global $conn;
+    global $lang; ?><!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
 "http://www.w3.org/TR/REC-html40/strict.dtd">
 
 <html xmlns="http://www.w3.org/1999/xhtml" version="-//W3C//DTD XHTML 1.1//EN" xml:lang="en">
@@ -287,12 +293,10 @@ global $lang;
 		<span id="load" style="display: none"><?php echo __("Loading..."); ?></span>
 		<?php
 
-		// if set to auto login, providing a link to logout wouldnt be much good
-		if (!isset($sbconfig['DefaultPass'])){
-			echo '<a href="logout.php">' . __("Logout") . '</a>';
-		}
-
-		?>
+        // if set to auto login, providing a link to logout wouldnt be much good
+        if (!isset($sbconfig['DefaultPass'])) {
+            echo '<a href="logout.php">' . __("Logout") . '</a>';
+        } ?>
 		</div>
 		<div class="clearer"></div>
 	</div>
@@ -331,90 +335,87 @@ global $lang;
 
 	<?php
 
-	if (isset($requestKey)) {
-		echo 'var requestKey = "' . $requestKey . '";';
-		echo "\n";
-	}
+    if (isset($requestKey)) {
+        echo 'var requestKey = "' . $requestKey . '";';
+        echo "\n";
+    }
 
-	// javascript translation strings
-	echo "\t\tvar getTextArr = {";
+    // javascript translation strings
+    echo "\t\tvar getTextArr = {";
 
-	if ($lang != "en_US") {
+    if ($lang != "en_US") {
+        echo '"Home":"' . __("Home") . '", ';
+        echo '"Users":"' . __("Users") . '", ';
+        echo '"Query":"' . __("Query") . '", ';
+        echo '"Import":"' . __("Import") . '", ';
+        echo '"Export":"' . __("Export") . '", ';
 
-		echo '"Home":"' . __("Home") . '", ';
-		echo '"Users":"' . __("Users") . '", ';
-		echo '"Query":"' . __("Query") . '", ';
-		echo '"Import":"' . __("Import") . '", ';
-		echo '"Export":"' . __("Export") . '", ';
+        echo '"Overview":"' . __("Overview") . '", ';
 
-		echo '"Overview":"' . __("Overview") . '", ';
+        echo '"Browse":"' . __("Browse") . '", ';
+        echo '"Structure":"' . __("Structure") . '", ';
+        echo '"Insert":"' . __("Insert") . '", ';
 
-		echo '"Browse":"' . __("Browse") . '", ';
-		echo '"Structure":"' . __("Structure") . '", ';
-		echo '"Insert":"' . __("Insert") . '", ';
+        echo '"Your changes were saved to the database.":"' . __("Your changes were saved to the database.") . '", ';
 
-		echo '"Your changes were saved to the database.":"' . __("Your changes were saved to the database.") . '", ';
+        echo '"delete this row":"' . __("delete this row") . '", ';
+        echo '"delete these rows":"' . __("delete these rows") . '", ';
+        echo '"empty this table":"' . __("empty this table") . '", ';
+        echo '"empty these tables":"' . __("empty these tables") . '", ';
+        echo '"drop this table":"' . __("drop this table") . '", ';
+        echo '"drop these tables":"' . __("drop these tables") . '", ';
+        echo '"delete this column":"' . __("delete this column") . '", ';
+        echo '"delete these columns":"' . __("delete these columns") . '", ';
+        echo '"delete this index":"' . __("delete this index") . '", ';
+        echo '"delete these indexes":"' . __("delete these indexes") . '", ';
+        echo '"delete this user":"' . __("delete this user") . '", ';
+        echo '"delete these users":"' . __("delete these users") . '", ';
+        echo '"Are you sure you want to":"' . __("Are you sure you want to") . '", ';
 
-		echo '"delete this row":"' . __("delete this row") . '", ';
-		echo '"delete these rows":"' . __("delete these rows") . '", ';
-		echo '"empty this table":"' . __("empty this table") . '", ';
-		echo '"empty these tables":"' . __("empty these tables") . '", ';
-		echo '"drop this table":"' . __("drop this table") . '", ';
-		echo '"drop these tables":"' . __("drop these tables") . '", ';
-		echo '"delete this column":"' . __("delete this column") . '", ';
-		echo '"delete these columns":"' . __("delete these columns") . '", ';
-		echo '"delete this index":"' . __("delete this index") . '", ';
-		echo '"delete these indexes":"' . __("delete these indexes") . '", ';
-		echo '"delete this user":"' . __("delete this user") . '", ';
-		echo '"delete these users":"' . __("delete these users") . '", ';
-		echo '"Are you sure you want to":"' . __("Are you sure you want to") . '", ';
+        echo '"The following query will be run:":"' . __("The following query will be run:") . '", ';
+        echo '"The following queries will be run:":"' . __("The following queries will be run:") . '", ';
 
-		echo '"The following query will be run:":"' . __("The following query will be run:") . '", ';
-		echo '"The following queries will be run:":"' . __("The following queries will be run:") . '", ';
+        echo '"Confirm":"' . __("Confirm") . '", ';
+        echo '"Are you sure you want to empty the \'%s\' table? This will delete all the data inside of it. The following query will be run:":"' . __("Are you sure you want to empty the '%s' table? This will delete all the data inside of it. The following query will be run:") . '", ';
+        echo '"Are you sure you want to drop the \'%s\' table? This will delete the table and all data inside of it. The following query will be run:":"' . __("Are you sure you want to drop the '%s' table? This will delete the table and all data inside of it. The following query will be run:") . '", ';
+        echo '"Are you sure you want to drop the database \'%s\'? This will delete the database, the tables inside the database, and all data inside of the tables. The following query will be run:":"' . __("Are you sure you want to drop the database '%s'? This will delete the database, the tables inside the database, and all data inside of the tables. The following query will be run:") . '", ';
 
-		echo '"Confirm":"' . __("Confirm") . '", ';
-		echo '"Are you sure you want to empty the \'%s\' table? This will delete all the data inside of it. The following query will be run:":"' . __("Are you sure you want to empty the '%s' table? This will delete all the data inside of it. The following query will be run:") . '", ';
-		echo '"Are you sure you want to drop the \'%s\' table? This will delete the table and all data inside of it. The following query will be run:":"' . __("Are you sure you want to drop the '%s' table? This will delete the table and all data inside of it. The following query will be run:") . '", ';
-		echo '"Are you sure you want to drop the database \'%s\'? This will delete the database, the tables inside the database, and all data inside of the tables. The following query will be run:":"' . __("Are you sure you want to drop the database '%s'? This will delete the database, the tables inside the database, and all data inside of the tables. The following query will be run:") . '", ';
+        echo '"Successfully saved changes":"' . __("Successfully saved changes") . '", ';
 
-		echo '"Successfully saved changes":"' . __("Successfully saved changes") . '", ';
+        echo '"New field":"' . __("New field") . '", ';
 
-		echo '"New field":"' . __("New field") . '", ';
+        echo '"Full Text":"' . __("Full Text") . '", ';
 
-		echo '"Full Text":"' . __("Full Text") . '", ';
+        echo '"Loading...":"' . __("Loading...") . '", ';
+        echo '"Redirecting...":"' . __("Redirecting...") . '", ';
 
-		echo '"Loading...":"' . __("Loading...") . '", ';
-		echo '"Redirecting...":"' . __("Redirecting...") . '", ';
+        echo '"Okay":"' . __("Okay") . '", ';
+        echo '"Cancel":"' . __("Cancel") . '", ';
 
-		echo '"Okay":"' . __("Okay") . '", ';
-		echo '"Cancel":"' . __("Cancel") . '", ';
+        echo '"Error":"' . __("Error") . '", ';
+        echo '"There was an error receiving data from the server":"' . __("There was an error receiving data from the server") . '"';
+    }
 
-		echo '"Error":"' . __("Error") . '", ';
-		echo '"There was an error receiving data from the server":"' . __("There was an error receiving data from the server") . '"';
+    echo '};';
 
-	}
-
-	echo '};';
-
-	echo "\n";
+    echo "\n";
 
 
-	echo 'var menujson = {"menu": [';
-	echo $conn->getMetadata();
-	echo ']};';
-
-	?>
+    echo 'var menujson = {"menu": [';
+    echo $conn->getMetadata();
+    echo ']};'; ?>
 	//-->
 	</script>
 </html>
 <?php
 }
 
-function requireDatabaseAndTableBeDefined() {
-	global $db, $table;
+function requireDatabaseAndTableBeDefined()
+{
+    global $db, $table;
 
-	if (!isset($db)) {
-		?>
+    if (!isset($db)) {
+        ?>
 
 		<div class="errorpage">
 		<h4><?php echo __("Oops"); ?></h4>
@@ -422,11 +423,11 @@ function requireDatabaseAndTableBeDefined() {
 		</div>
 
 		<?php
-		exit;
-	}
+        exit;
+    }
 
-	if (!isset($table)) {
-		?>
+    if (!isset($table)) {
+        ?>
 
 		<div class="errorpage">
 		<h4><?php echo __("Oops"); ?></h4>
@@ -434,111 +435,127 @@ function requireDatabaseAndTableBeDefined() {
 		</div>
 
 		<?php
-		exit;
-	}
-
+        exit;
+    }
 }
 
-function formatForOutput($text) {
-	$text = nl2br(htmlentities($text, ENT_QUOTES, 'UTF-8'));
-	if (utf8_strlen($text) > PREVIEW_CHAR_SIZE) {
-		$text = utf8_substr($text, 0, PREVIEW_CHAR_SIZE) . " <span class=\"toBeContinued\">[...]</span>";
-	}
-	return $text;
+function formatForOutput($text)
+{
+    $text = nl2br(htmlentities($text, ENT_QUOTES, 'UTF-8'));
+    if (utf8_strlen($text) > PREVIEW_CHAR_SIZE) {
+        $text = utf8_substr($text, 0, PREVIEW_CHAR_SIZE) . " <span class=\"toBeContinued\">[...]</span>";
+    }
+    return $text;
 }
 
-function formatDataForCSV($text) {
-	$text = str_replace('"', '""', $text);
-	return $text;
+function formatDataForCSV($text)
+{
+    $text = str_replace('"', '""', $text);
+    return $text;
 }
 
-function splitQueryText($query) {
-	// the regex needs a trailing semicolon
-	$query = trim($query);
+function splitQueryText($query)
+{
+    // the regex needs a trailing semicolon
+    $query = trim($query);
 
-	if (substr($query, -1) != ";")
-		$query .= ";";
+    if (substr($query, -1) != ";") {
+        $query .= ";";
+    }
 
-	// i spent 3 days figuring out this line
-	preg_match_all("/(?>[^;']|(''|(?>'([^']|\\')*[^\\\]')))+;/ixU", $query, $matches, PREG_SET_ORDER);
+    // i spent 3 days figuring out this line
+    preg_match_all("/(?>[^;']|(''|(?>'([^']|\\')*[^\\\]')))+;/ixU", $query, $matches, PREG_SET_ORDER);
 
-	$querySplit = "";
+    $querySplit = [];
 
-	foreach ($matches as $match) {
-		// get rid of the trailing semicolon
-		$querySplit[] = substr($match[0], 0, -1);
-	}
+    foreach ($matches as $match) {
+        // get rid of the trailing semicolon
+        $querySplit[] = substr($match[0], 0, -1);
+    }
 
-	return $querySplit;
+    return $querySplit;
 }
 
-function memoryFormat($bytes) {
-	if ($bytes < 1024)
-		$dataString = $bytes . " B";
-	else if ($bytes < (1024 * 1024))
-		$dataString = round($bytes / 1024) . " KB";
-	else if ($bytes < (1024 * 1024 * 1024))
-		$dataString = round($bytes / (1024 * 1024)) . " MB";
-	else
-		$dataString = round($bytes / (1024 * 1024 * 1024)) . " GB";
+function memoryFormat($bytes)
+{
+    if ($bytes < 1024) {
+        $dataString = $bytes . " B";
+    } elseif ($bytes < (1024 * 1024)) {
+        $dataString = round($bytes / 1024) . " KB";
+    } elseif ($bytes < (1024 * 1024 * 1024)) {
+        $dataString = round($bytes / (1024 * 1024)) . " MB";
+    } else {
+        $dataString = round($bytes / (1024 * 1024 * 1024)) . " GB";
+    }
 
-	return $dataString;
+    return $dataString;
 }
 
-function themeFile($filename) {
-	global $theme;
-	return smartCaching("themes/" . $theme . "/" . $filename);
+function themeFile($filename)
+{
+    global $theme;
+    return smartCaching("themes/" . $theme . "/" . $filename);
 }
 
-function smartCaching($filename) {
-	return $filename . "?ver=" . str_replace(".", "_", VERSION_NUMBER);
+function smartCaching($filename)
+{
+    return $filename . "?ver=" . str_replace(".", "_", VERSION_NUMBER);
 }
 
-function __($t) {
-	global $gt;
-	return $gt->getTranslation($t);
+function __($t)
+{
+    global $gt;
+    return $gt->getTranslation($t);
 }
 
-function __p($singular, $plural, $count) {
-	global $gt;
-	if ($count == 1) {
-		return $gt->getTranslation($singular);
-	} else {
-		return $gt->getTranslation($plural);
-	}
+function __p($singular, $plural, $count)
+{
+    global $gt;
+    if ($count == 1) {
+        return $gt->getTranslation($singular);
+    } else {
+        return $gt->getTranslation($plural);
+    }
 }
 
-function utf8_substr($str, $from, $len) {
-# utf8 substr
-# www.yeap.lv
-  return preg_replace('#^(?:[\x00-\x7F]|[\xC0-\xFF][\x80-\xBF]+){0,'.$from.'}'.
+function utf8_substr($str, $from, $len)
+{
+    # utf8 substr
+    # www.yeap.lv
+    return preg_replace(
+      '#^(?:[\x00-\x7F]|[\xC0-\xFF][\x80-\xBF]+){0,'.$from.'}'.
                        '((?:[\x00-\x7F]|[\xC0-\xFF][\x80-\xBF]+){0,'.$len.'}).*#s',
-                       '$1',$str);
+      '$1',
+      $str
+  );
 }
 
-function utf8_strlen($str) {
+function utf8_strlen($str)
+{
     $i = 0;
     $count = 0;
-    $len = strlen ($str);
+    $len = strlen($str);
     while ($i < $len) {
-    $chr = ord ($str[$i]);
-    $count++;
-    $i++;
-    if ($i >= $len)
-        break;
-
-    if ($chr & 0x80) {
-        $chr <<= 1;
-        while ($chr & 0x80) {
+        $chr = ord($str[$i]);
+        $count++;
         $i++;
-        $chr <<= 1;
+        if ($i >= $len) {
+            break;
         }
-    }
+
+        if ($chr & 0x80) {
+            $chr <<= 1;
+            while ($chr & 0x80) {
+                $i++;
+                $chr <<= 1;
+            }
+        }
     }
     return $count;
 }
 
-function microtime_float() {
+function microtime_float()
+{
     list($usec, $sec) = explode(" ", microtime());
     return ((float)$usec + (float)$sec);
 }
